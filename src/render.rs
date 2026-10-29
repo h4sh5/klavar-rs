@@ -18,7 +18,7 @@ const PAGE_W: f64 = 595.28; // A4
 const PAGE_H: f64 = 841.89;
 const MARGIN: f64 = 34.0;
 const LABEL_W: f64 = 42.0;
-const GUTTER: f64 = 26.0;
+const GUTTER: f64 = 6.0;
 
 pub struct Geo {
     pub u: f64,
@@ -31,6 +31,20 @@ impl Geo {
     pub fn stem_len(&self, idx: usize) -> f64 {
         self.stem * (1.0 + 0.45 * idx.min(3) as f64)
     }
+}
+
+/// Max stem reach to the left (left-hand voices) and right (right-hand
+/// voices); each side only reserves space for stems that actually point there.
+fn stem_sides(k: &KlavarScore, g: &Geo) -> (f64, f64) {
+    let (mut l, mut r): (f64, f64) = (0.0, 0.0);
+    for v in &k.voices {
+        let s = g.stem_len(v.stem_index);
+        match v.hand {
+            Hand::Left => l = l.max(s),
+            Hand::Right => r = r.max(s),
+        }
+    }
+    (l, r)
 }
 
 pub fn geo(k: &KlavarScore) -> Geo {
@@ -93,8 +107,8 @@ pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
 
     // natural (uncompressed) strip width decides automatic column count
     let nat_staff = ((max_u - min_u) as f64 * g.u).max(60.0);
-    let nat_stem_max = g.stem_len(k.voices.iter().map(|v| v.stem_index).max().unwrap_or(0));
-    let nat_strip = nat_staff + 2.0 * (nat_stem_max + g.r + 6.0);
+    let (nat_l, nat_r) = stem_sides(k, &g);
+    let nat_strip = nat_staff + (nat_l + g.r + 6.0) + (nat_r + g.r + 6.0);
     let auto_cols = (((usable + GUTTER) / (nat_strip + GUTTER)).floor() as usize).clamp(1, 3);
     let cols = if k.opts.columns == 0 {
         auto_cols
@@ -105,7 +119,7 @@ pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
     // column pitch; compress the staff horizontally when fixed columns are
     // requested but the strips are too wide to fit side by side
     let col_pitch = (usable + GUTTER) / cols as f64;
-    let label_w = if cols > 1 { 24.0 } else { LABEL_W };
+    let label_w = if cols > 1 { 18.0 } else { LABEL_W };
     let col_avail = col_pitch - GUTTER - label_w;
     let f = (col_avail / nat_strip).min(1.0);
     if f < 1.0 {
@@ -114,9 +128,9 @@ pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
         g.r = (g.r * f).max(1.4);
     }
 
-    let stem_max = g.stem_len(k.voices.iter().map(|v| v.stem_index).max().unwrap_or(0));
+    let (stem_l, stem_r) = stem_sides(k, &g);
     let staff_px = ((max_u - min_u) as f64 * g.u).max(40.0);
-    let strip_w_full = staff_px + 2.0 * (stem_max + g.r + 6.0);
+    let strip_w_full = staff_px + (stem_l + g.r + 6.0) + (stem_r + g.r + 6.0);
 
     let first_top = MARGIN + 66.0; // room for the title block on page 1
     let page_top = MARGIN + 10.0;
@@ -211,7 +225,7 @@ pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
             } else {
                 0.0
             };
-            let x0 = MARGIN + (col as f64) * col_pitch + label_w + pad + stem_max + g.r + 4.0;
+            let x0 = MARGIN + (col as f64) * col_pitch + label_w + pad + stem_l + g.r + 4.0;
             StripPos {
                 page: s / cols,
                 x0,
