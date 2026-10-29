@@ -25,7 +25,6 @@ pub struct Geo {
     pub r: f64,
     pub stem: f64,
     pub qn: f64, // pt per quarter note
-    pub lw: f64, // width multiplier for staff lines (note_size)
 }
 
 impl Geo {
@@ -36,14 +35,14 @@ impl Geo {
 
 pub fn geo(k: &KlavarScore) -> Geo {
     let u: f64 = 3.4;
-    let ns = k.opts.note_size.clamp(0.5, 2.5);
-    let u = u * ns; // whole staff system scales: line pitch, heads, stems, width
+    // note_size scales widths/spacing only; stroke weights stay constant
+    let ns = k.opts.note_size.clamp(0.1, 3.0);
+    let u = u * ns;
     Geo {
         u,
         r: 0.9 * u,
         stem: 7.5 * u,
         qn: k.opts.quarter_mm.clamp(2.0, 30.0) * 72.0 / 25.4,
-        lw: ns,
     }
 }
 
@@ -108,11 +107,7 @@ pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
     let col_pitch = (usable + GUTTER) / cols as f64;
     let label_w = if cols > 1 { 24.0 } else { LABEL_W };
     let col_avail = col_pitch - GUTTER - label_w;
-    let f = if cols > 1 {
-        (col_avail / nat_strip).min(1.0)
-    } else {
-        1.0
-    };
+    let f = (col_avail / nat_strip).min(1.0);
     if f < 1.0 {
         g.u *= f;
         g.stem *= f;
@@ -300,12 +295,11 @@ pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
         match a {
             Annot::Stop { page, x, y } => {
                 pdf.set_active_page(*page);
-                let (dw, dh) = (2.8 * g.lw, 2.2 * g.lw);
-                pdf.path(&[(*x - dw, *y - dh), (*x, *y + dh), (*x + dw, *y - dh)], 1.1 * g.lw);
+                pdf.path(&[(*x - 2.8, *y - 2.2), (*x, *y + 2.2), (*x + 2.8, *y - 2.2)], 1.1);
             }
             Annot::Dot { page, x, y } => {
                 pdf.set_active_page(*page);
-                pdf.circle(*x, *y, g.r * 0.42, true, 0.3 * g.lw);
+                pdf.circle(*x, *y, g.r * 0.42, true, 0.3);
             }
         }
     }
@@ -359,16 +353,9 @@ fn draw_staff(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, min_u: i32, max_u:
             let is_trio = matches!(pc, 6 | 8 | 10);
             let is_center = pitch == 61 || pitch == 62; // C#4 / D#4
             if is_center {
-                pdf.line(x, y_top, x, y_bot, 1.0 * g.lw, &[1.8, 1.8]);
+                pdf.line(x, y_top, x, y_bot, 1.0, &[1.8, 1.8]);
             } else {
-                pdf.line(
-                    x,
-                    y_top,
-                    x,
-                    y_bot,
-                    if is_trio { 1.5 } else { 0.9 } * g.lw,
-                    &[],
-                );
+                pdf.line(x, y_top, x, y_bot, if is_trio { 1.5 } else { 0.9 }, &[]);
             }
         }
     }
@@ -463,9 +450,9 @@ fn draw_notes(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, sp: &StripPos) {
             pdf.line(x_anchor, y, x_anchor + dir * stem, y, 1.3, &[]);
             for (&pitch, &x) in a.pitches.iter().zip(xs.iter()) {
                 if black(pitch) {
-                    pdf.circle(x, y - g.r - 0.6, g.r, true, 0.5 * g.lw);
+                    pdf.circle(x, y - g.r - 0.6, g.r, true, 0.5);
                 } else {
-                    pdf.circle(x, y + g.r + 0.6, g.r, false, 1.2 * g.lw);
+                    pdf.circle(x, y + g.r + 0.6, g.r, false, 1.2);
                 }
             }
         }

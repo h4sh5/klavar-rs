@@ -47,7 +47,7 @@ fn main() {
                      [--note-size F] [--counts] [--no-subdivisions]\n\
                      hand: 0=auto 1=all-right 2=all-left 3=split-at-middle-C 4=per-part\n\
                      columns: strips per page (staff is compressed to fit); default: automatic\n\
-                     note-size: notehead + staff-line scale 0.5-2.5; default: 1.0"
+                     note-size: note/spacing width scale 0.1-3 (line weights unchanged); default: 1.0"
                 );
                 return;
             }

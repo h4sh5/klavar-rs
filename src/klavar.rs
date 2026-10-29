@@ -54,7 +54,7 @@ pub struct Options {
     /// strips per page: 0 = automatic, 1..=3 = fixed (staff is compressed
     /// horizontally as needed so that the chosen number of columns fit)
     pub columns: u8,
-    /// Note size scale: notehead radii and staff-line widths (clamped 0.5..=2.5).
+    /// Note size scale: line pitch, radii, stems, overall width (clamped 0.1..=3).
     pub note_size: f64,
 }
 
