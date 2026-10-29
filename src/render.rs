@@ -356,9 +356,9 @@ fn draw_staff(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, min_u: i32, max_u:
             let is_trio = matches!(pc, 6 | 8 | 10);
             let is_center = pitch == 61 || pitch == 62; // C#4 / D#4
             if is_center {
-                pdf.line(x, y_top, x, y_bot, 1.0, &[1.8, 1.8]);
+                pdf.line(x, y_top, x, y_bot, 0.55, &[1.8, 1.8]);
             } else {
-                pdf.line(x, y_top, x, y_bot, if is_trio { 1.5 } else { 0.9 }, &[]);
+                pdf.line(x, y_top, x, y_bot, if is_trio { 0.75 } else { 0.45 }, &[]);
             }
         }
     }
