@@ -54,6 +54,8 @@ pub struct Options {
     /// strips per page: 0 = automatic, 1..=3 = fixed (staff is compressed
     /// horizontally as needed so that the chosen number of columns fit)
     pub columns: u8,
+    /// Note size scale: notehead radii and staff-line widths (clamped 0.5..=2.5).
+    pub note_size: f64,
 }
 
 impl Default for Options {
@@ -65,6 +67,7 @@ impl Default for Options {
             show_count_numbers: false,
             show_subdivisions: true,
             columns: 0,
+            note_size: 1.0,
         }
     }
 }

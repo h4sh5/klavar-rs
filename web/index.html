@@ -39,6 +39,10 @@
       <datalist id="colticks"><option value="1"></option><option value="2"></option><option value="3"></option></datalist>
     </div>
     <div class="opt-row">
+      <label for="noteSize">Note sizes <output id="noteSizeOut">100%</output></label>
+      <input type="range" id="noteSize" min="0.5" max="2.5" step="0.1" value="1">
+    </div>
+    <div class="opt-row">
       <label for="hands">Hand assignment</label>
       <select id="hands">
         <option value="0" selected>Automatic (per part, split at middle C)</option>

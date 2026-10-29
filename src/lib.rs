@@ -84,6 +84,7 @@ pub fn wasm_convert(
     hand_mode: u8,
     flags: u8,
     columns: u8,
+    note_size: f64,
 ) -> Result<Vec<u8>, JsValue> {
     let opts = klavar::Options {
         quarter_mm: if quarter_mm.is_finite() { quarter_mm.clamp(3.0, 20.0) } else { 7.5 },
@@ -92,6 +93,7 @@ pub fn wasm_convert(
         show_count_numbers: flags & 2 != 0,
         show_subdivisions: flags & 4 != 0,
         columns: columns.min(3),
+        note_size: if note_size.is_finite() { note_size } else { 1.0 },
     };
     to_pdf(data, &opts).map_err(|e| JsValue::from_str(&e.to_string()))
 }

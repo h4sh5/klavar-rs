@@ -25,6 +25,7 @@ pub struct Geo {
     pub r: f64,
     pub stem: f64,
     pub qn: f64, // pt per quarter note
+    pub lw: f64, // width multiplier for staff lines (note_size)
 }
 
 impl Geo {
@@ -35,11 +36,13 @@ impl Geo {
 
 pub fn geo(k: &KlavarScore) -> Geo {
     let u: f64 = 3.4;
+    let ns = k.opts.note_size.clamp(0.5, 2.5);
     Geo {
         u,
-        r: 0.9 * u,
+        r: 0.9 * u * ns,
         stem: 7.5 * u,
         qn: k.opts.quarter_mm.clamp(2.0, 30.0) * 72.0 / 25.4,
+        lw: ns,
     }
 }
 
@@ -354,9 +357,16 @@ fn draw_staff(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, min_u: i32, max_u:
             let is_trio = matches!(pc, 6 | 8 | 10);
             let is_center = pitch == 61 || pitch == 62; // C#4 / D#4
             if is_center {
-                pdf.line(x, y_top, x, y_bot, 1.0, &[1.8, 1.8]);
+                pdf.line(x, y_top, x, y_bot, 1.0 * g.lw, &[1.8, 1.8]);
             } else {
-                pdf.line(x, y_top, x, y_bot, if is_trio { 1.5 } else { 0.9 }, &[]);
+                pdf.line(
+                    x,
+                    y_top,
+                    x,
+                    y_bot,
+                    if is_trio { 1.5 } else { 0.9 } * g.lw,
+                    &[],
+                );
             }
         }
     }

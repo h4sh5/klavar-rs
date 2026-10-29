@@ -39,6 +39,8 @@ The klavar staff is drawn vertically: **pitch across, time down**.
 * Time is marked by horizontal bar lines (measures) and dashed beat lines
   (quarter-note grid, default 7.5 mm per quarter, per the klavar standard);
   optional count numbers and subdivision ticks.
+* **Note sizes** knob (0.5–2.5×): scales the notehead circles and the width
+  of the staff lines they sit on (`--note-size`, UI slider).
 * Strips are packed **1–3 columns per page** (`--columns`, or the UI slider);
   with multiple columns the staff is compressed horizontally as needed and
   strip heights are balanced so every column fills evenly. Default is
@@ -53,7 +55,7 @@ The klavar staff is drawn vertically: **pitch across, time down**.
 
 ```
 cargo run --release --bin klavar-conv -- input.musicxml -o out.pdf
-cargo run --release --bin klavar-conv -- input.mid --quarter-mm 9 --hand 3 --columns 2
+cargo run --release --bin klavar-conv -- input.mid --quarter-mm 9 --hand 3 --columns 2 --note-size 1.4
 ```
 
 ## Web app
@@ -64,7 +66,8 @@ python3 -m http.server -d web-app 8080 # → http://localhost:8080
 ```
 
 Drag-and-drop (or samples), options for spacing, columns per page (1–3
-slider), hands and annotations, live PDF preview, and a download button named
+slider), note sizes (0.5–2.5× slider), hands and annotations, live PDF
+preview, and a download button named
 from the piece's title. `.mxl` files are unzipped in JS
 (`DecompressionStream`) before handing bytes to the wasm module.
 

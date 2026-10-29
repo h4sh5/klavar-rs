@@ -93,7 +93,7 @@ function convert() {
   clearError();
   let pdf;
   try {
-    pdf = wasm_convert(currentData, parseFloat($("quarter").value), parseInt($("hands").value, 10), flags(), parseInt($("columns").value, 10));
+    pdf = wasm_convert(currentData, parseFloat($("quarter").value), parseInt($("hands").value, 10), flags(), parseInt($("columns").value, 10), parseFloat($("noteSize").value));
   } catch (e) {
     const msg = (e && e.message) || String(e);
     return showError(
@@ -112,7 +112,7 @@ function convert() {
   result.hidden = false;
 }
 
-for (const id of ["quarter", "hands", "barNums", "countNums", "subdivs", "columns"])
+for (const id of ["quarter", "hands", "barNums", "countNums", "subdivs", "columns", "noteSize"])
   $(id).addEventListener("change", convert);
 $("quarter").addEventListener("input", () =>
   $("quarterOut").textContent = `${$("quarter").value} mm / quarter`
@@ -121,6 +121,9 @@ $("columns").addEventListener("input", () => {
   $("columnsOut").textContent = $("columns").value;
   convert(); // discrete steps: safe to re-render live
 });
+$("noteSize").addEventListener("input", () =>
+  $("noteSizeOut").textContent = `${Math.round($("noteSize").value * 100)}%`
+);
 
 /* ---------- errors ---------- */
 
