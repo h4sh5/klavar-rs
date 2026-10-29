@@ -179,9 +179,12 @@ pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
                 strip_bounds[strip_idx].1 = y;
                 strip_bounds[strip_idx].3 = i - 1;
                 strip_idx += 1;
-                strip_bounds.push((page_top, page_top, i, i));
-                y = page_top;
-                strip_top = page_top;
+                // all strips on the first page start below the title block so
+                // the columns line up horizontally
+                let top = if strip_idx < cols { first_top } else { page_top };
+                strip_bounds.push((top, top, i, i));
+                y = top;
+                strip_top = top;
             } else if !strip_has_content {
                 strip_bounds[strip_idx].0 = y;
             }
