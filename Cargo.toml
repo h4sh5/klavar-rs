@@ -1,0 +1,17 @@
+[package]
+name = "klavar-rs"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Clean-room Klavarscript (klavar notation) converter: MusicXML/MIDI -> Klavar PDF, compiled to WebAssembly"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+roxmltree = "0.20"
+wasm-bindgen = "0.2"
+
+[profile.release]
+opt-level = "s"
+lto = true

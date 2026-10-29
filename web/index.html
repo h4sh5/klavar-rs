@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klavar Converter — MusicXML / MIDI → Klavarscript PDF</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Klavar<span>Converter</span></h1>
+  <p class="tagline">MusicXML &amp; MIDI → Klavarscript PDF — 100&nbsp;% in your browser, nothing uploaded.</p>
+</header>
+
+<main>
+  <section id="drop" class="card drop" tabindex="0">
+    <div class="drop-inner">
+      <div class="drop-icon">🎹</div>
+      <p><strong>Drop a MusicXML or MIDI file here</strong><br>or click to choose</p>
+      <input type="file" id="file" accept=".xml,.musicxml,.mxl,.mid,.midi" hidden>
+    </div>
+    <div class="samples">
+      <span>Try a sample:</span>
+      <button class="linkish" data-sample="samples/twinkle.musicxml">Twinkle (MusicXML)</button>
+      <button class="linkish" data-sample="samples/chromatic.musicxml">Chromatic scale</button>
+      <button class="linkish" data-sample="samples/waltz.musicxml">Waltz 3/4</button>
+      <button class="linkish" data-sample="samples/test.mid">MIDI test</button>
+    </div>
+  </section>
+
+  <section class="card options">
+    <div class="opt-row">
+      <label for="quarter">Note spacing <output id="quarterOut">7.5&nbsp;mm / quarter</output></label>
+      <input type="range" id="quarter" min="5" max="14" step="0.5" value="7.5">
+    </div>
+    <div class="opt-row">
+      <label for="hands">Hand assignment</label>
+      <select id="hands">
+        <option value="0" selected>Automatic (per part, split at middle C)</option>
+        <option value="1">All right hand</option>
+        <option value="2">All left hand</option>
+        <option value="3">Split at middle C</option>
+        <option value="4">Per part</option>
+      </select>
+    </div>
+    <div class="opt-row checks">
+      <label><input type="checkbox" id="barNums" checked> bar numbers</label>
+      <label><input type="checkbox" id="countNums"> count numbers</label>
+      <label><input type="checkbox" id="subdivs"> subdivision ticks</label>
+    </div>
+  </section>
+
+  <section class="card result" id="result" hidden>
+    <div class="result-bar">
+      <span id="meta"></span>
+      <a id="download" class="btn" download>Download PDF</a>
+    </div>
+    <object id="preview" type="application/pdf" data="about:blank"></object>
+  </section>
+
+  <p id="error" class="error" hidden></p>
+</main>
+
+<footer>
+  <p>Clean-room re-implementation of the <a href="https://klavar.com" rel="noopener">Klavar</a> notation converter
+  in Rust → WebAssembly. The klavar staff runs vertically: pitch across, time down,
+  filled noteheads on black-key lines, hollow noteheads between them.
+  Horizontal stems: → right hand, ← left hand · ◦ release · dots mark notes held over a bar line.</p>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
