@@ -37,9 +37,10 @@ impl Geo {
 pub fn geo(k: &KlavarScore) -> Geo {
     let u: f64 = 3.4;
     let ns = k.opts.note_size.clamp(0.5, 2.5);
+    let u = u * ns; // whole staff system scales: line pitch, heads, stems, width
     Geo {
         u,
-        r: 0.9 * u * ns,
+        r: 0.9 * u,
         stem: 7.5 * u,
         qn: k.opts.quarter_mm.clamp(2.0, 30.0) * 72.0 / 25.4,
         lw: ns,
@@ -299,11 +300,12 @@ pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
         match a {
             Annot::Stop { page, x, y } => {
                 pdf.set_active_page(*page);
-                pdf.path(&[(*x - 2.8, *y - 2.2), (*x, *y + 2.2), (*x + 2.8, *y - 2.2)], 1.1);
+                let (dw, dh) = (2.8 * g.lw, 2.2 * g.lw);
+                pdf.path(&[(*x - dw, *y - dh), (*x, *y + dh), (*x + dw, *y - dh)], 1.1 * g.lw);
             }
             Annot::Dot { page, x, y } => {
                 pdf.set_active_page(*page);
-                pdf.circle(*x, *y, g.r * 0.42, true, 0.3);
+                pdf.circle(*x, *y, g.r * 0.42, true, 0.3 * g.lw);
             }
         }
     }
@@ -461,9 +463,9 @@ fn draw_notes(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, sp: &StripPos) {
             pdf.line(x_anchor, y, x_anchor + dir * stem, y, 1.3, &[]);
             for (&pitch, &x) in a.pitches.iter().zip(xs.iter()) {
                 if black(pitch) {
-                    pdf.circle(x, y - g.r - 0.6, g.r, true, 0.5);
+                    pdf.circle(x, y - g.r - 0.6, g.r, true, 0.5 * g.lw);
                 } else {
-                    pdf.circle(x, y + g.r + 0.6, g.r, false, 1.2);
+                    pdf.circle(x, y + g.r + 0.6, g.r, false, 1.2 * g.lw);
                 }
             }
         }

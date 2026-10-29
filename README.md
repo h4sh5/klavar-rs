@@ -39,8 +39,10 @@ The klavar staff is drawn vertically: **pitch across, time down**.
 * Time is marked by horizontal bar lines (measures) and dashed beat lines
   (quarter-note grid, default 7.5 mm per quarter, per the klavar standard);
   optional count numbers and subdivision ticks.
-* **Note sizes** knob (0.5–2.5×): scales the notehead circles and the width
-  of the staff lines they sit on (`--note-size`, UI slider).
+* **Note sizes** knob (0.5–2.5×): scales the whole note system — notehead
+  circles grow, the space between the staff lines widens, stems reach
+  farther and the staff gets wider overall (columns re-fit automatically)
+  (`--note-size`, UI slider).
 * Strips are packed **1–3 columns per page** (`--columns`, or the UI slider);
   with multiple columns the staff is compressed horizontally as needed and
   strip heights are balanced so every column fills evenly. Default is
