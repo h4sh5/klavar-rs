@@ -28,11 +28,19 @@ fn main() {
             }
             "--counts" => opts.show_count_numbers = true,
             "--no-subdivisions" => opts.show_subdivisions = false,
+            "--columns" => {
+                i += 1;
+                if let Some(v @ 1..=3) = args.get(i).and_then(|v| v.parse().ok()) {
+                    opts.columns = v;
+                }
+            }
             "-h" | "--help" => {
                 println!(
                     "usage: klavar-conv INPUT.(xml|mid|midi) [-o OUT.pdf] \
-                     [--quarter-mm F] [--hand 0|1|2|3|4] [--counts] [--no-subdivisions]\n\
-                     hand: 0=auto 1=all-right 2=all-left 3=split-at-middle-C 4=per-part"
+                     [--quarter-mm F] [--hand 0|1|2|3|4] [--columns 1|2|3] \
+                     [--counts] [--no-subdivisions]\n\
+                     hand: 0=auto 1=all-right 2=all-left 3=split-at-middle-C 4=per-part\n\
+                     columns: strips per page (staff is compressed to fit); default: automatic"
                 );
                 return;
             }

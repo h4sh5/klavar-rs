@@ -47,6 +47,7 @@ struct StripPos {
     page: usize,
     x0: f64,
     x1: f64,
+    label_w: f64,
     y_top: f64,
     y_bot: f64,
     tick_start: i64, // first tick of the strip's first measure
@@ -81,43 +82,109 @@ fn note_x_rel(k: &KlavarScore, g: &Geo, pitch: u8) -> f64 {
 }
 
 pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
-    let g = geo(k);
-    let max_stem_idx = k.voices.iter().map(|v| v.stem_index).max().unwrap_or(0);
-    let stem_max = g.stem_len(max_stem_idx);
+    let mut g = geo(k);
 
     let min_u = u_pos(k.midi_min) - 2;
     let max_u = u_pos(k.midi_max) + 2;
-    let staff_px = ((max_u - min_u) as f64 * g.u).max(60.0);
-
-    let strip_w = staff_px + 2.0 * (stem_max + g.r + 6.0);
     let usable = PAGE_W - 2.0 * MARGIN;
-    let cols = (((usable + GUTTER) / (strip_w + GUTTER)).floor() as usize).clamp(1, 3);
+
+    // natural (uncompressed) strip width decides automatic column count
+    let nat_staff = ((max_u - min_u) as f64 * g.u).max(60.0);
+    let nat_stem_max = g.stem_len(k.voices.iter().map(|v| v.stem_index).max().unwrap_or(0));
+    let nat_strip = nat_staff + 2.0 * (nat_stem_max + g.r + 6.0);
+    let auto_cols = (((usable + GUTTER) / (nat_strip + GUTTER)).floor() as usize).clamp(1, 3);
+    let cols = if k.opts.columns == 0 {
+        auto_cols
+    } else {
+        (k.opts.columns as usize).clamp(1, 3)
+    };
+
+    // column pitch; compress the staff horizontally when fixed columns are
+    // requested but the strips are too wide to fit side by side
+    let col_pitch = (usable + GUTTER) / cols as f64;
+    let label_w = if cols > 1 { 24.0 } else { LABEL_W };
+    let col_avail = col_pitch - GUTTER - label_w;
+    let f = if cols > 1 {
+        (col_avail / nat_strip).min(1.0)
+    } else {
+        1.0
+    };
+    if f < 1.0 {
+        g.u *= f;
+        g.stem *= f;
+        g.r = (g.r * f).max(1.4);
+    }
+
+    let stem_max = g.stem_len(k.voices.iter().map(|v| v.stem_index).max().unwrap_or(0));
+    let staff_px = ((max_u - min_u) as f64 * g.u).max(40.0);
+    let strip_w_full = staff_px + 2.0 * (stem_max + g.r + 6.0);
 
     let first_top = MARGIN + 66.0; // room for the title block on page 1
     let page_top = MARGIN + 10.0;
     let page_bottom = PAGE_H - MARGIN - 12.0;
 
     // ---- pack measures into strips ----
+    // With a fixed column count, strip height is capped near the average so
+    // that the columns on a page fill evenly instead of one full-height strip
+    // running ahead of the others; the cap is grown until the page count
+    // stays at the minimum achievable with full-height strips.
+    let hs: Vec<f64> = k.measures.iter().map(|m| m.len as f64 / 480.0 * g.qn).collect();
+    let total_h: f64 = hs.iter().sum();
+    let first_h = page_bottom - first_top;
+    let rest_h = page_bottom - page_top;
+    let max_measure = hs.iter().cloned().fold(0.0f64, f64::max);
+    let pages_min = {
+        let mut pages = 1usize;
+        let mut room = first_h;
+        for &h in &hs {
+            if h > room {
+                pages += 1;
+                room = rest_h;
+            }
+            room -= h;
+        }
+        pages
+    };
+    let page_goal = pages_min.div_ceil(cols).max(1);
+    let simulate = |cap: f64| -> usize {
+        let mut ns = 1usize;
+        let mut used = 0.0;
+        for &h in &hs {
+            if used > 0.0 && used + h > cap {
+                ns += 1;
+                used = 0.0;
+            }
+            used += h;
+        }
+        ns
+    };
+    let mut cap = (total_h / ((page_goal * cols) as f64)).max(max_measure);
+    for _ in 0..12 {
+        if simulate(cap).div_ceil(cols) <= page_goal {
+            break;
+        }
+        cap *= 1.15;
+    }
+    let cap = cap.min(rest_h.max(max_measure));
+
     let mut placed: Vec<Placed> = Vec::new();
     let mut strip_bounds: Vec<(f64, f64, usize, usize)> = Vec::new(); // (top,bottom,first_measure,last_measure)
     {
         let mut strip_idx = 0usize;
         let mut y = first_top;
-        let mut first_measure_of_strip = 0usize;
+        let mut strip_top = first_top;
         strip_bounds.push((first_top, first_top, 0, 0));
-        for (i, m) in k.measures.iter().enumerate() {
-            let h = m.len as f64 / 480.0 * g.qn;
+        for (i, &h) in hs.iter().enumerate() {
             let strip_has_content = placed.iter().any(|p| p.strip == strip_idx);
-            if strip_has_content && y + h > page_bottom {
+            if strip_has_content && (y + h > page_bottom || y + h > strip_top + cap) {
                 strip_bounds[strip_idx].1 = y;
                 strip_bounds[strip_idx].3 = i - 1;
                 strip_idx += 1;
                 strip_bounds.push((page_top, page_top, i, i));
                 y = page_top;
-                first_measure_of_strip = i;
+                strip_top = page_top;
             } else if !strip_has_content {
                 strip_bounds[strip_idx].0 = y;
-                first_measure_of_strip = i;
             }
             placed.push(Placed {
                 index: i,
@@ -128,7 +195,6 @@ pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
         }
         strip_bounds[strip_idx].1 = y;
         strip_bounds[strip_idx].3 = k.measures.len().saturating_sub(1);
-        let _ = first_measure_of_strip;
     }
     let nstrips = strip_bounds.len();
     let total_pages = nstrips.div_ceil(cols).max(1);
@@ -138,11 +204,17 @@ pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
         .map(|s| {
             let (top, bot, mi0, mi1) = strip_bounds[s];
             let col = s % cols;
-            let x0 = MARGIN + LABEL_W + (col as f64) * (strip_w + GUTTER) + stem_max + g.r + 4.0;
+            let pad = if cols > 1 {
+                ((col_pitch - GUTTER - label_w - strip_w_full) * 0.5).max(0.0)
+            } else {
+                0.0
+            };
+            let x0 = MARGIN + (col as f64) * col_pitch + label_w + pad + stem_max + g.r + 4.0;
             StripPos {
                 page: s / cols,
                 x0,
                 x1: x0 + staff_px,
+                label_w,
                 y_top: top,
                 y_bot: bot,
                 tick_start: k.measures[mi0].start,
@@ -309,10 +381,10 @@ fn draw_measure(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, sp: &StripPos, p
         }
         pdf.line(x0, y, x1, y, 0.7, &[4.0, 3.0]);
     }
-    // time signature at start
+    // time signature at start (in this strip's own label gutter)
     if k.time_sig_ticks.contains(&m.start) {
         pdf.text(
-            MARGIN + 2.0,
+            x0 - sp.label_w + 2.0,
             y0 + 22.0,
             8.0,
             &format!("{}/{}", m.num, m.den),
@@ -321,7 +393,7 @@ fn draw_measure(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, sp: &StripPos, p
         );
     }
     if k.opts.show_bar_numbers {
-        pdf.text(MARGIN + 2.0, y0 + 4.0, 7.0, &m.number.to_string(), false, 0);
+        pdf.text(x0 - sp.label_w + 2.0, y0 + 4.0, 7.0, &m.number.to_string(), false, 0);
     }
     if k.opts.show_count_numbers {
         for b in 0..m.num.max(1) {

@@ -101,6 +101,24 @@ fn pdf_output_wellformed() {
     }
 }
 
+fn n_pages(pdf: &[u8]) -> usize {
+    pdf.windows(b"/Type /Page ".len()).filter(|w| w == b"/Type /Page ").count()
+}
+
+#[test]
+fn column_count_controls_layout() {
+    let data = sample("twinkle.musicxml");
+    let wide = klavar::Options { quarter_mm: 12.0, columns: 1, ..Default::default() };
+    let mut pages = Vec::new();
+    for cols in [1u8, 2, 3] {
+        let pdf = to_pdf(&data, &klavar::Options { columns: cols, ..wide }).unwrap();
+        pages.push(n_pages(&pdf));
+    }
+    assert!(pages[0] > 1, "baseline should be multi-page at 12mm/quarter: {}", pages[0]);
+    assert!(pages[1] <= pages[0] && pages[2] <= pages[1], "more columns must not add pages: {:?}", pages);
+    assert!(pages[2] < pages[0], "3 columns must save pages vs 1: {:?}", pages);
+}
+
 #[test]
 fn musicxml_chords_and_ties() {
     let t = String::from_utf8(sample("twinkle.musicxml")).unwrap();

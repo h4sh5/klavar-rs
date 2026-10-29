@@ -34,6 +34,11 @@
       <input type="range" id="quarter" min="5" max="14" step="0.5" value="7.5">
     </div>
     <div class="opt-row">
+      <label for="columns">Columns per page <output id="columnsOut">2</output></label>
+      <input type="range" id="columns" min="1" max="3" step="1" value="2" list="colticks">
+      <datalist id="colticks"><option value="1"></option><option value="2"></option><option value="3"></option></datalist>
+    </div>
+    <div class="opt-row">
       <label for="hands">Hand assignment</label>
       <select id="hands">
         <option value="0" selected>Automatic (per part, split at middle C)</option>

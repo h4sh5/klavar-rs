@@ -78,13 +78,20 @@ pub fn pdf_filename(data: &[u8]) -> String {
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub fn wasm_convert(data: &[u8], quarter_mm: f64, hand_mode: u8, flags: u8) -> Result<Vec<u8>, JsValue> {
+pub fn wasm_convert(
+    data: &[u8],
+    quarter_mm: f64,
+    hand_mode: u8,
+    flags: u8,
+    columns: u8,
+) -> Result<Vec<u8>, JsValue> {
     let opts = klavar::Options {
         quarter_mm: if quarter_mm.is_finite() { quarter_mm.clamp(3.0, 20.0) } else { 7.5 },
         hand_mode,
         show_bar_numbers: flags & 1 != 0,
         show_count_numbers: flags & 2 != 0,
         show_subdivisions: flags & 4 != 0,
+        columns: columns.min(3),
     };
     to_pdf(data, &opts).map_err(|e| JsValue::from_str(&e.to_string()))
 }
