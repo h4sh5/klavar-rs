@@ -1,5 +1,7 @@
 # klavar-rs
 
+Hosted on: https://h4sh5.github.io/klavar-rs/
+
 A clean-room re-implementation of the [Klavar](https://klavar.com) music-notation
 converter ("Klavarscript") in pure Rust → WebAssembly, with a frontend-only web UI:
 upload a **MusicXML** or **MIDI** file, get a **klavar-notation PDF** — computed
