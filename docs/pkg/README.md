@@ -1,5 +1,7 @@
 # klavar-rs
 
+Hosted on: https://h4sh5.github.io/klavar-rs/
+
 A clean-room re-implementation of the [Klavar](https://klavar.com) music-notation
 converter ("Klavarscript") in pure Rust → WebAssembly, with a frontend-only web UI:
 upload a **MusicXML** or **MIDI** file, get a **klavar-notation PDF** — computed
@@ -19,6 +21,7 @@ src/
 web/            index.html + app.js + style.css (vanilla JS, module imports pkg/)
 pkg/            wasm-pack output (--target web)
 web-app/        assembled deployable static site (scripts/build_web.sh)
+docs/           copy of web-app
 tests/          integration tests (parse → convert → PDF invariants)
 scripts/        sample generation, PDF geometry verification, web build
 ```

@@ -120,6 +120,48 @@ fn column_count_controls_layout() {
 }
 
 #[test]
+fn svg_output_tagged() {
+    let data = sample("twinkle.musicxml");
+    let svg = klavar_rs::to_svg(&data, &Options::default()).unwrap();
+    assert!(svg.starts_with("<svg"));
+    assert!(svg.ends_with("</svg>"));
+    assert!(svg.contains("class=\"kn\" data-n=\"0:"), "note heads must be tagged");
+    // every tag is tick:pitch with non-negative integers
+    for chunk in svg.split("data-n=\"").skip(1) {
+        let tag = chunk.split('"').next().unwrap();
+        let (t, p) = tag.split_once(':').expect("tick:pitch tag");
+        assert!(t.parse::<i64>().unwrap() >= 0);
+        let p: u8 = p.parse().unwrap();
+        assert!(p < 128);
+    }
+}
+
+#[test]
+fn timeline_matches_svg_tags() {
+    let data = sample("twinkle.musicxml");
+    let json = klavar_rs::timeline_json(&data).unwrap();
+    assert!(json.contains("\"bpm\":"));
+    assert!(json.contains("\"ppq\":480"));
+    let body = json
+        .split("\"notes\":[")
+        .nth(1)
+        .unwrap()
+        .trim_end_matches("]}")
+        .to_string();
+    assert!(!body.is_empty());
+    let svg = klavar_rs::to_svg(&data, &Options::default()).unwrap();
+    // every timeline note (start,pitch) must exist as a tagged note head
+    for n in body.split("],[").map(|s| s.trim_matches(|c| c == '[' || c == ']')) {
+        let mut it = n.split(',');
+        let t: i64 = it.next().unwrap().parse().unwrap();
+        let e: i64 = it.next().unwrap().parse().unwrap();
+        let p: u8 = it.next().unwrap().parse().unwrap();
+        assert!(e > t, "note must have duration");
+        assert!(svg.contains(&format!("data-n=\"{}:{}\"", t, p)), "missing head {}:{}", t, p);
+    }
+}
+
+#[test]
 fn musicxml_chords_and_ties() {
     let t = String::from_utf8(sample("twinkle.musicxml")).unwrap();
     let s = musicxml::parse_musicxml(&t).unwrap();

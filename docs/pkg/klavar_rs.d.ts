@@ -5,12 +5,24 @@ export function wasm_convert(data: Uint8Array, quarter_mm: number, hand_mode: nu
 
 export function wasm_filename(data: Uint8Array): string;
 
+/**
+ * Same as wasm_convert but returns the klavar score as an SVG string.
+ */
+export function wasm_svg(data: Uint8Array, quarter_mm: number, hand_mode: number, flags: number, columns: number, note_size: number): string;
+
+/**
+ * Playback timeline JSON for the interactive view (see `timeline_json`).
+ */
+export function wasm_timeline(data: Uint8Array): string;
+
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly wasm_convert: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number, number, number];
     readonly wasm_filename: (a: number, b: number) => [number, number];
+    readonly wasm_svg: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number, number, number];
+    readonly wasm_timeline: (a: number, b: number) => [number, number, number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __externref_table_dealloc: (a: number) => void;

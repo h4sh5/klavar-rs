@@ -89,7 +89,8 @@ pub struct KlavarScore {
 const TOL: i64 = GRID; // 1/60 beat tolerance
 
 /// Normalize raw part notes: quantize, dedupe, drop empties.
-fn normalize(notes: &[Note]) -> Vec<Note> {
+/// Public so the playback timeline can use the exact same note grid as the engraving.
+pub fn normalize(notes: &[Note]) -> Vec<Note> {
     let mut v: Vec<Note> = notes
         .iter()
         .map(|n| {

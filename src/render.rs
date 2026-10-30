@@ -12,7 +12,55 @@
 
 use crate::klavar::{black, Hand, KlavarScore};
 use crate::model::u_pos;
+
+/// Backend-agnostic drawing interface; implemented for the PDF writer and for
+/// the SVG generator (interactive web view). Coordinates are y-down from the
+/// page/canvas top, in PDF points.
+pub trait Painter {
+    fn page(&mut self);
+    fn set_active_page(&mut self, i: usize);
+    fn line(&mut self, x1: f64, y1: f64, x2: f64, y2: f64, width: f64, dash: &[f64]);
+    fn circle(&mut self, x: f64, y: f64, r: f64, filled: bool, width: f64);
+    /// Circle that is a playable note head; `tag` ("tick:pitch") lets
+    /// interactive backends locate and highlight it. Default: plain circle.
+    fn circle_tagged(
+        &mut self,
+        x: f64,
+        y: f64,
+        r: f64,
+        filled: bool,
+        width: f64,
+        _tag: &str,
+    ) {
+        self.circle(x, y, r, filled, width);
+    }
+    fn path(&mut self, pts: &[(f64, f64)], width: f64);
+    /// Text with baseline at (x, y); align: 0 left, 1 center, 2 right.
+    fn text(&mut self, x: f64, y: f64, size: f64, s: &str, bold: bool, align: u8);
+}
+
 use crate::pdf::PdfBuilder;
+
+impl Painter for PdfBuilder {
+    fn page(&mut self) {
+        PdfBuilder::page(self)
+    }
+    fn set_active_page(&mut self, i: usize) {
+        PdfBuilder::set_active_page(self, i)
+    }
+    fn line(&mut self, x1: f64, y1: f64, x2: f64, y2: f64, width: f64, dash: &[f64]) {
+        PdfBuilder::line(self, x1, y1, x2, y2, width, dash)
+    }
+    fn circle(&mut self, x: f64, y: f64, r: f64, filled: bool, width: f64) {
+        PdfBuilder::circle(self, x, y, r, filled, width)
+    }
+    fn path(&mut self, pts: &[(f64, f64)], width: f64) {
+        PdfBuilder::path(self, pts, width)
+    }
+    fn text(&mut self, x: f64, y: f64, size: f64, s: &str, bold: bool, align: u8) {
+        PdfBuilder::text(self, x, y, size, s, bold, align)
+    }
+}
 
 const PAGE_W: f64 = 595.28; // A4
 const PAGE_H: f64 = 841.89;
@@ -98,7 +146,7 @@ fn note_x_rel(k: &KlavarScore, g: &Geo, pitch: u8) -> f64 {
     (u_pos(pitch) - min_u) as f64 * g.u
 }
 
-pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
+pub fn render(k: &KlavarScore, pdf: &mut dyn Painter) {
     let mut g = geo(k);
 
     let min_u = u_pos(k.midi_min) - 2;
@@ -354,7 +402,7 @@ pub fn render(k: &KlavarScore, pdf: &mut PdfBuilder) {
     }
 }
 
-fn draw_staff(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, min_u: i32, max_u: i32, sp: &StripPos) {
+fn draw_staff(k: &KlavarScore, pdf: &mut dyn Painter, g: &Geo, min_u: i32, max_u: i32, sp: &StripPos) {
     let x0 = sp.x0;
     let (y_top, y_bot) = (sp.y_top - 6.0, sp.y_bot + 6.0);
     let lo_oct = (k.midi_min as i32).div_euclid(12) - 1;
@@ -378,7 +426,7 @@ fn draw_staff(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, min_u: i32, max_u:
     }
 }
 
-fn draw_measure(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, sp: &StripPos, p: &Placed) {
+fn draw_measure(k: &KlavarScore, pdf: &mut dyn Painter, g: &Geo, sp: &StripPos, p: &Placed) {
     let m = &k.measures[p.index];
     let y0 = p.y0;
     let unit = 480.0 * 4.0 / m.den as f64;
@@ -443,7 +491,7 @@ fn draw_measure(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, sp: &StripPos, p
     }
 }
 
-fn draw_notes(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, sp: &StripPos) {
+fn draw_notes(k: &KlavarScore, pdf: &mut dyn Painter, g: &Geo, sp: &StripPos) {
     for v in &k.voices {
         let stem = g.stem_len(v.stem_index);
         let dir = match v.hand {
@@ -466,10 +514,11 @@ fn draw_notes(k: &KlavarScore, pdf: &mut PdfBuilder, g: &Geo, sp: &StripPos) {
             };
             pdf.line(x_anchor, y, x_anchor + dir * stem, y, 1.3, &[]);
             for (&pitch, &x) in a.pitches.iter().zip(xs.iter()) {
+                let tag = format!("{}:{}", a.tick, pitch);
                 if black(pitch) {
-                    pdf.circle(x, y - g.r - 0.6, g.r, true, 0.5);
+                    pdf.circle_tagged(x, y - g.r - 0.6, g.r, true, 0.5, &tag);
                 } else {
-                    pdf.circle(x, y + g.r + 0.6, g.r, false, 1.2);
+                    pdf.circle_tagged(x, y + g.r + 0.6, g.r, false, 1.2, &tag);
                 }
             }
         }
