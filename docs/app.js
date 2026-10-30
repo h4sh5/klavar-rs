@@ -111,6 +111,7 @@ function convert() {
     const msg = (e && e.message) || String(e);
     playerStopAll();
     $("player").hidden = true;
+    $("gotoPlayer").hidden = true;
     return showError(
       msg.includes("Parse error")
         ? `Could not parse "${currentName}".\n${msg}`
@@ -130,6 +131,7 @@ function convert() {
   $("svgWrap").innerHTML = svgStr;
   playerLoad(JSON.parse(tlJson));
   $("player").hidden = false;
+  $("gotoPlayer").hidden = false;
 }
 
 for (const id of ["quarter", "hands", "barNums", "countNums", "subdivs", "columns", "noteSize"])
@@ -152,7 +154,26 @@ $("noteSize").addEventListener("input", () =>
 
 const playerSec = $("player"), svgWrap = $("svgWrap"), playBtn = $("playBtn"),
   restartBtn = $("restartBtn"), ptime = $("ptime"), speedIn = $("speed"),
-  speedOut = $("speedOut"), progressFill = $("progressFill");
+  speedOut = $("speedOut"), progressFill = $("progressFill"),
+  zoomIn = $("zoom"), zoomOut = $("zoomOut");
+
+/* display zoom for the score; applied as a CSS var so the SVG pages scale up
+ * and scroll inside the fixed-height box */
+function applyZoom() {
+  const z = parseFloat(zoomIn.value) || 2;
+  svgWrap.style.setProperty("--pz", z);
+  zoomOut.textContent = `${+z.toFixed(2)}\u00d7`;
+  // scale both dimensions explicitly: the svg carries width/height attributes,
+  // so a CSS height alone would letterbox instead of zoom
+  const svg = svgWrap.querySelector("svg");
+  if (svg) {
+    const vb = (svg.getAttribute("viewBox") || "0 0 595.28 841.89").split(/[\s,]+/);
+    svg.style.width = (parseFloat(vb[2]) * z).toFixed(1) + "px";
+    svg.style.height = (parseFloat(vb[3]) * z).toFixed(1) + "px";
+  }
+}
+zoomIn.addEventListener("input", applyZoom);
+applyZoom();
 
 const P = {
   notes: [],          // {t, e, p} sorted by start tick
@@ -178,7 +199,10 @@ function playerLoad(tl) {
   P.endTick = Math.max(tl.endTick, 1);
   P.anchorTick = 0;
   P.scan = 0;
+  P.speed = parseFloat(speedIn.value) || 0.5; // keep in sync with the slider
+  speedOut.textContent = `${P.speed.toFixed(2)}\u00d7`;
   elemCache.clear();
+  applyZoom(); // re-apply after the SVG was replaced
   setPlayBtn();
   updatePlayerUI(0);
   playBtn.disabled = P.notes.length === 0;
@@ -425,10 +449,14 @@ function togglePlay() {
 
 playBtn.addEventListener("click", togglePlay);
 restartBtn.addEventListener("click", () => playerSeek(0));
+$("gotoPlayer").addEventListener("click", () => {
+  $("player").scrollIntoView({ behavior: "smooth", block: "start" });
+  $("player").focus({ preventScroll: true });
+});
 
 speedIn.addEventListener("input", () => {
   const wasPlaying = P.playing;
-  P.speed = parseFloat(speedIn.value) || 1;
+  P.speed = parseFloat(speedIn.value) || 0.5;
   speedOut.textContent = `${P.speed.toFixed(2)}\u00d7`;
   if (wasPlaying) {
     const cur = tickNow();

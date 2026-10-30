@@ -58,13 +58,22 @@ a { color: var(--accent-2); }
 .btn.ghost { background: #e8e5dd; color: var(--ink); }
 .ptime { font-variant-numeric: tabular-nums; color: #6b7885; }
 .speed { margin-left: auto; display: flex; align-items: center; gap: .5rem; font-weight: 600; }
+.speed ~ .speed { margin-left: 0; }
 .speed output { min-width: 3.4rem; font-weight: 400; color: #6b7885; font-variant-numeric: tabular-nums; }
 .speed input[type=range] { width: 190px; accent-color: var(--accent-2); }
 .progress { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin-bottom: .8rem; }
 #progressFill { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
-.svg-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: #fbfaf7; padding: .5rem; }
+.svg-wrap {
+  overflow: auto; border: 1px solid var(--line); border-radius: 8px;
+  background: #fbfaf7; padding: .5rem;
+  height: min(80vh, 880px); /* fixed box; the zoomed score scrolls inside it */
+  overscroll-behavior: contain;
+}
 .svg-wrap:focus-visible { outline: 2px solid var(--accent); }
-.svg-wrap svg { height: min(78vh, 900px); display: block; }
+/* zoom factor --pz (1..4) applied to the 842pt-tall pages; width follows the viewBox ratio */
+.svg-wrap svg { height: calc(var(--pz, 2) * 842px); display: block; }
 .kn { transition: fill .06s linear, stroke .06s linear; }
 .kn.on { fill: #ff9600; stroke: #ff9600; filter: drop-shadow(0 0 4px rgba(255, 150, 0, .95)); }
 .hint { margin: .6rem 0 0; font-size: .82rem; color: #6b7885; }
+.sec-title { margin: 0 0 .8rem; font-size: 1.15rem; color: var(--accent); }
+.btn.goto { background: var(--accent-2); }
