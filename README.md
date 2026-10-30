@@ -19,6 +19,7 @@ src/
 web/            index.html + app.js + style.css (vanilla JS, module imports pkg/)
 pkg/            wasm-pack output (--target web)
 web-app/        assembled deployable static site (scripts/build_web.sh)
+docs/           copy of web-app
 tests/          integration tests (parse → convert → PDF invariants)
 scripts/        sample generation, PDF geometry verification, web build
 ```
