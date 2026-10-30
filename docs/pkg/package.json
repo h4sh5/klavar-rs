@@ -1,0 +1,17 @@
+{
+  "name": "klavar-rs",
+  "type": "module",
+  "description": "Clean-room Klavarscript (klavar notation) converter: MusicXML/MIDI -> Klavar PDF, compiled to WebAssembly",
+  "version": "0.1.0",
+  "license": "MIT",
+  "files": [
+    "klavar_rs_bg.wasm",
+    "klavar_rs.js",
+    "klavar_rs.d.ts"
+  ],
+  "main": "klavar_rs.js",
+  "types": "klavar_rs.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
